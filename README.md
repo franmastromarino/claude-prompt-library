@@ -5,7 +5,11 @@ A Claude Code plugin to save, search, load and manage reusable prompts across pr
 ## Installation
 
 ```bash
-claude plugin install franmastromarino/claude-prompt-library --scope user
+# Register the marketplace
+claude plugin marketplace add franciscomastromarino/claude-prompt-library
+
+# Install the plugin
+claude plugin install claude-prompt-library@claude-prompt-library --scope user
 ```
 
 ## Usage
@@ -20,6 +24,7 @@ Invoke `/prompt` in any Claude Code session:
 | `/prompt search <query>` | Search by name, tag, category or content |
 | `/prompt delete <name>` | Delete a prompt |
 | `/prompt edit <name>` | Edit an existing prompt |
+| `/prompt sync` | Sync all prompts to autocomplete |
 
 ### Saving a prompt
 
@@ -37,6 +42,21 @@ Claude will ask for the content, a short description, category and optional tags
 
 The saved prompt is printed into the conversation, ready to use or modify.
 
+### Quick access via autocomplete
+
+Saved prompts are automatically registered as Claude Code commands. Type `/prompt:` and your prompts appear in the autocomplete selector — just pick one.
+
+```
+/prompt:api-review        → loads instantly
+/prompt:code-reviewer     → loads instantly
+```
+
+To manually sync all prompts to autocomplete:
+
+```
+/prompt sync
+```
+
 ### Searching
 
 ```
@@ -53,6 +73,8 @@ The plugin provides:
 - **`skills/prompt/SKILL.md`** — A skill definition that gives Claude the `/prompt` interface
 
 Prompts are stored as markdown files with YAML frontmatter in `${CLAUDE_PLUGIN_DATA}/prompts/`, a persistent directory that survives plugin updates.
+
+When saving a prompt, the CLI also generates a command file in `~/.claude/commands/` so the prompt appears in Claude Code's native autocomplete as `/prompt:<name>`.
 
 ### Prompt format
 
@@ -79,6 +101,7 @@ claude --plugin-dir ./
 # Run the CLI directly
 ./bin/prompt-lib help
 ./bin/prompt-lib list
+./bin/prompt-lib sync
 ```
 
 ## Requirements

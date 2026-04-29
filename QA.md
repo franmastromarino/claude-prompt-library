@@ -1,118 +1,131 @@
 # QA Manual — claude-prompt-library
 
-## Requisitos previos
+## Prerequisites
 
-- Claude Code CLI instalado (`claude --version` debe responder)
-- `jq` instalado (`jq --version`)
+- Claude Code CLI installed (`claude --version` must respond)
+- `jq` installed (`jq --version`)
 - `bash` 4+ (`bash --version`)
-- Cuenta de GitHub con acceso al repo
+- GitHub account with repo access
 
-## Instalación para testing
+## Installation for testing
 
 ```bash
-# Opción A: desde el marketplace (producción)
+# Option A: from marketplace (production)
 claude plugin marketplace add franciscomastromarino/claude-prompt-library
 claude plugin install claude-prompt-library@claude-prompt-library --scope user
 
-# Opción B: desarrollo local (sin instalar)
+# Option B: local development (no install)
 git clone https://github.com/franciscomastromarino/claude-prompt-library.git
 claude --plugin-dir ./claude-prompt-library
 ```
 
-Verificar instalación:
+Verify installation:
 
 ```bash
 claude plugin list
-# Debe mostrar: claude-prompt-library@claude-prompt-library — Status: ✔ enabled
+# Should show: claude-prompt-library@claude-prompt-library — Status: ✔ enabled
 ```
 
 ---
 
-## Plan de pruebas
+## Test plan
 
-### 1. Detección del skill
+### 1. Skill detection
 
-| # | Paso | Resultado esperado | Pass/Fail |
-|---|------|-------------------|-----------|
-| 1.1 | Abrir nueva sesión de Claude Code | Sesión inicia sin errores | |
-| 1.2 | Escribir `/prompt` y esperar autocomplete | Aparece sugerencia: `/prompt (prompt-library)` | |
-| 1.3 | Presionar Enter en `/prompt` | Claude ejecuta el skill sin error "Unknown skill" | |
-| 1.4 | Escribir `/prompt list` | Claude ejecuta `prompt-lib list` y muestra resultado | |
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 1.1 | Open a new Claude Code session | Session starts without errors | |
+| 1.2 | Type `/prompt` and wait for autocomplete | Suggestion appears: `/prompt (prompt-library)` | |
+| 1.3 | Press Enter on `/prompt` | Claude executes the skill without "Unknown skill" error | |
+| 1.4 | Type `/prompt list` | Claude runs `prompt-lib list` and shows results | |
 
-### 2. Librería vacía (estado inicial)
+### 2. Empty library (initial state)
 
-| # | Paso | Resultado esperado | Pass/Fail |
-|---|------|-------------------|-----------|
-| 2.1 | `/prompt list` con librería vacía | Mensaje: "No prompts saved yet" | |
-| 2.2 | `/prompt load inexistente` | Mensaje de error claro, no crash | |
-| 2.3 | `/prompt search algo` | "No results found" | |
-| 2.4 | `/prompt delete inexistente` | Mensaje de error claro, no crash | |
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 2.1 | `/prompt list` with empty library | Message: "No prompts saved yet" | |
+| 2.2 | `/prompt load nonexistent` | Clear error message, no crash | |
+| 2.3 | `/prompt search something` | "No results found" | |
+| 2.4 | `/prompt delete nonexistent` | Clear error message, no crash | |
 
-### 3. Guardar un prompt
+### 3. Save a prompt
 
-| # | Paso | Resultado esperado | Pass/Fail |
-|---|------|-------------------|-----------|
-| 3.1 | `/prompt save code-reviewer` | Claude pide contenido, descripción, categoría y tags | |
-| 3.2 | Proveer contenido y metadata | Ejecuta `prompt-lib save` y confirma "saved: code-reviewer" | |
-| 3.3 | Verificar archivo creado | Existe `~/.claude/plugins/data/prompt-library/prompts/code-reviewer.md` | |
-| 3.4 | Verificar índice actualizado | `INDEX.json` contiene entrada con slug, name, description, category, tags, created | |
-| 3.5 | `/prompt list` | Muestra el prompt recién guardado con todos sus campos | |
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 3.1 | `/prompt save code-reviewer` | Claude asks for content, description, category and tags | |
+| 3.2 | Provide content and metadata | Runs `prompt-lib save` and confirms "saved: code-reviewer" | |
+| 3.3 | Verify file created | `~/.claude/plugins/data/prompt-library/prompts/code-reviewer.md` exists | |
+| 3.4 | Verify index updated | `INDEX.json` contains entry with slug, name, description, category, tags, created | |
+| 3.5 | `/prompt list` | Shows the newly saved prompt with all fields | |
+| 3.6 | Verify autocomplete command created | `~/.claude/commands/prompt:code-reviewer.md` exists | |
 
-### 4. Cargar un prompt
+### 4. Load a prompt
 
-| # | Paso | Resultado esperado | Pass/Fail |
-|---|------|-------------------|-----------|
-| 4.1 | `/prompt load code-reviewer` | Muestra el contenido completo del prompt | |
-| 4.2 | Verificar que el frontmatter se muestra | Description, category y tags visibles | |
-| 4.3 | Verificar que Claude ofrece opciones | Pregunta si usar as-is o modificar | |
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 4.1 | `/prompt load code-reviewer` | Shows the full prompt content | |
+| 4.2 | Verify frontmatter is displayed | Description, category and tags are visible | |
+| 4.3 | Verify Claude offers options | Asks whether to use as-is or modify | |
 
-### 5. Buscar prompts
+### 5. Search prompts
 
-Prerequisito: guardar al menos 3 prompts con distintas categorías y tags.
+Prerequisite: save at least 3 prompts with different categories and tags.
 
-| # | Paso | Resultado esperado | Pass/Fail |
-|---|------|-------------------|-----------|
-| 5.1 | `/prompt search` + nombre parcial | Encuentra por slug | |
-| 5.2 | `/prompt search` + tag | Encuentra por tag | |
-| 5.3 | `/prompt search` + categoría | Encuentra por categoría | |
-| 5.4 | `/prompt search` + palabra del contenido | Encuentra en content match | |
-| 5.5 | `/prompt search` + texto inexistente | "No results found" | |
-| 5.6 | Búsqueda case-insensitive | `API` y `api` dan el mismo resultado | |
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 5.1 | `/prompt search` + partial name | Finds by slug | |
+| 5.2 | `/prompt search` + tag | Finds by tag | |
+| 5.3 | `/prompt search` + category | Finds by category | |
+| 5.4 | `/prompt search` + word from content | Finds in content match | |
+| 5.5 | `/prompt search` + nonexistent text | "No results found" | |
+| 5.6 | Case-insensitive search | `API` and `api` return the same results | |
 
-### 6. Editar un prompt
+### 6. Edit a prompt
 
-| # | Paso | Resultado esperado | Pass/Fail |
-|---|------|-------------------|-----------|
-| 6.1 | `/prompt edit code-reviewer` | Claude obtiene la ruta del archivo | |
-| 6.2 | Pedir un cambio al contenido | Claude lee el archivo, lo modifica con Edit tool | |
-| 6.3 | `/prompt load code-reviewer` | Muestra el contenido actualizado | |
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 6.1 | `/prompt edit code-reviewer` | Claude gets the file path | |
+| 6.2 | Request a change to the content | Claude reads the file and modifies it with Edit tool | |
+| 6.3 | `/prompt load code-reviewer` | Shows the updated content | |
 
-### 7. Eliminar un prompt
+### 7. Delete a prompt
 
-| # | Paso | Resultado esperado | Pass/Fail |
-|---|------|-------------------|-----------|
-| 7.1 | `/prompt delete code-reviewer` | Claude confirma antes de borrar | |
-| 7.2 | Confirmar eliminación | "deleted: code-reviewer" | |
-| 7.3 | Verificar que el archivo ya no existe | `ls` del directorio no muestra el archivo | |
-| 7.4 | Verificar que INDEX.json se actualizó | La entrada fue removida | |
-| 7.5 | `/prompt list` | Ya no muestra el prompt eliminado | |
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 7.1 | `/prompt delete code-reviewer` | Claude confirms before deleting | |
+| 7.2 | Confirm deletion | "deleted: code-reviewer" | |
+| 7.3 | Verify file no longer exists | `ls` of the directory does not show the file | |
+| 7.4 | Verify INDEX.json updated | Entry was removed | |
+| 7.5 | `/prompt list` | No longer shows the deleted prompt | |
+| 7.6 | Verify autocomplete command removed | `~/.claude/commands/prompt:code-reviewer.md` no longer exists | |
 
-### 8. Casos borde
+### 8. Autocomplete integration
 
-| # | Paso | Resultado esperado | Pass/Fail |
-|---|------|-------------------|-----------|
-| 8.1 | Guardar prompt con nombre con espacios: `mi prompt largo` | Slugifica a `mi-prompt-largo` | |
-| 8.2 | Guardar prompt con nombre con mayúsculas: `CodeReview` | Slugifica a `codereview` | |
-| 8.3 | Guardar prompt con caracteres especiales: `test@#$%` | Slugifica correctamente sin caracteres inválidos | |
-| 8.4 | Guardar prompt con el mismo nombre que uno existente | Sobreescribe el existente, actualiza INDEX.json | |
-| 8.5 | Guardar prompt con contenido vacío (solo frontmatter) | Se guarda correctamente o error claro | |
-| 8.6 | Prompt con contenido muy largo (>10KB) | Se guarda y carga sin truncar | |
-| 8.7 | INDEX.json corrupto (borrar manualmente) | `prompt-lib init` lo regenera | |
-| 8.8 | Directorio de datos no existe | Se crea automáticamente al primer uso | |
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 8.1 | Save a prompt named `my-test` | `~/.claude/commands/prompt:my-test.md` is created | |
+| 8.2 | Open a new Claude Code session | Session loads without errors | |
+| 8.3 | Type `/prompt:` and wait for autocomplete | Saved prompts appear in the selector | |
+| 8.4 | Select `/prompt:my-test` | Prompt content is injected into the conversation | |
+| 8.5 | Run `prompt-lib sync` | All prompts regenerated in `~/.claude/commands/` | |
+| 8.6 | Delete a prompt | Corresponding command file is removed | |
 
-### 9. CLI directo (sin Claude)
+### 9. Edge cases
 
-Ejecutar fuera de Claude Code para verificar que el CLI funciona independiente:
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 9.1 | Save prompt with spaces in name: `my long prompt` | Slugifies to `my-long-prompt` | |
+| 9.2 | Save prompt with uppercase: `CodeReview` | Slugifies to `codereview` | |
+| 9.3 | Save prompt with special characters: `test@#$%` | Slugifies correctly, no invalid characters | |
+| 9.4 | Save prompt with same name as existing one | Overwrites the existing one, updates INDEX.json | |
+| 9.5 | Save prompt with empty content (frontmatter only) | Saves correctly or shows clear error | |
+| 9.6 | Prompt with very long content (>10KB) | Saves and loads without truncation | |
+| 9.7 | Corrupted INDEX.json (delete manually) | `prompt-lib init` regenerates it | |
+| 9.8 | Data directory does not exist | Created automatically on first use | |
+
+### 10. Standalone CLI (without Claude)
+
+Run outside of Claude Code to verify the CLI works independently:
 
 ```bash
 export CLAUDE_PLUGIN_DATA="$HOME/.claude/plugins/data/prompt-library"
@@ -120,159 +133,176 @@ prompt-lib help
 prompt-lib init
 prompt-lib save test-cli <<'EOF'
 ---
-description: Test desde CLI
+description: Test from CLI
 category: general
 tags: [test]
 ---
-Contenido de prueba
+Test content
 EOF
 prompt-lib list
 prompt-lib load test-cli
 prompt-lib search test
+prompt-lib sync
 prompt-lib delete test-cli
 prompt-lib list
 ```
 
-| # | Paso | Resultado esperado | Pass/Fail |
-|---|------|-------------------|-----------|
-| 9.1 | `prompt-lib help` | Muestra ayuda completa | |
-| 9.2 | Todos los comandos CRUD | Funcionan sin error | |
-| 9.3 | Ejecución sin `CLAUDE_PLUGIN_DATA` | Usa fallback `~/.claude/plugins/data/prompt-library` | |
-| 9.4 | Ejecución sin `jq` instalado | Error claro indicando dependencia | |
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 10.1 | `prompt-lib help` | Shows full help text | |
+| 10.2 | All CRUD commands | Work without errors | |
+| 10.3 | `prompt-lib sync` | Syncs all prompts to `~/.claude/commands/` | |
+| 10.4 | Run without `CLAUDE_PLUGIN_DATA` | Uses fallback `~/.claude/plugins/data/prompt-library` | |
+| 10.5 | Run without `jq` installed | Clear error indicating missing dependency | |
 
-### 10. Instalación y desinstalación
+### 11. Install and uninstall
 
-| # | Paso | Resultado esperado | Pass/Fail |
-|---|------|-------------------|-----------|
-| 10.1 | `claude plugin install` desde marketplace | Instala correctamente | |
-| 10.2 | `claude plugin list` | Muestra plugin enabled | |
-| 10.3 | `claude plugin disable` | Desactiva, skill ya no disponible | |
-| 10.4 | `claude plugin enable` | Reactiva, skill disponible de nuevo | |
-| 10.5 | `claude plugin uninstall` | Desinstala limpiamente | |
-| 10.6 | Verificar que los datos persisten post-desinstalación | `~/.claude/plugins/data/prompt-library/` sigue existiendo | |
-
----
-
-## Mejoras sugeridas
-
-### Prioridad alta
-
-1. **Detección de dependencias**: El script debería verificar que `jq` está instalado y dar un error claro si no lo está, en lugar de fallar silenciosamente.
-
-2. **Comando `prompt-lib export`**: Exportar uno o todos los prompts a un directorio del proyecto (`.claude/prompts/`) para compartirlos con el equipo.
-
-3. **Comando `prompt-lib import`**: Importar prompts desde un archivo `.md` o un directorio, para migrar prompts existentes.
-
-4. **Confirmación en overwrite**: Cuando se guarda un prompt con un nombre que ya existe, avisar que se va a sobreescribir y pedir confirmación.
-
-5. **Versionado de prompts**: Guardar versiones anteriores al editar (backup en `prompts/.history/<name>/<timestamp>.md`).
-
-### Prioridad media
-
-6. **Comando `prompt-lib stats`**: Mostrar estadísticas: total de prompts, por categoría, más recientes, más usados.
-
-7. **Tags como primer ciudadano**: Comando `prompt-lib tags` para listar todos los tags usados y cuántos prompts tiene cada uno.
-
-8. **Formato de salida configurable**: `prompt-lib list --json` para integración con otros tools.
-
-9. **Soporte para templates con variables**: Placeholders como `{{nombre}}`, `{{contexto}}` que Claude rellena al cargar.
-
-10. **Favoritos / pinned**: Marcar prompts como favoritos para que aparezcan primero en `list`.
-
-### Prioridad baja
-
-11. **Sync entre máquinas**: Sincronizar la librería de prompts via git (un repo dedicado como storage).
-
-12. **Prompts compartidos por proyecto**: Además de `~/.claude/plugins/data/`, soportar `.claude/prompts/` a nivel proyecto.
-
-13. **Categorías custom**: Permitir categorías más allá de las predefinidas.
-
-14. **Autocompletado de nombres**: Que `prompt-lib load <TAB>` autocomplete nombres de prompts existentes.
+| # | Step | Expected result | Pass/Fail |
+|---|------|----------------|-----------|
+| 11.1 | `claude plugin install` from marketplace | Installs correctly | |
+| 11.2 | `claude plugin list` | Shows plugin as enabled | |
+| 11.3 | `claude plugin disable` | Disables plugin, skill no longer available | |
+| 11.4 | `claude plugin enable` | Reactivates, skill available again | |
+| 11.5 | `claude plugin uninstall` | Uninstalls cleanly | |
+| 11.6 | Verify data persists after uninstall | `~/.claude/plugins/data/prompt-library/` still exists | |
 
 ---
 
-## Proceso de onboarding
+## Suggested improvements
 
-Guía paso a paso para alguien que nunca usó el plugin.
+### High priority
 
-### Paso 1: Contexto (30 segundos)
+1. **Dependency detection**: The script should verify that `jq` is installed and show a clear error if missing, instead of failing silently.
 
-> **¿Qué es esto?** Un plugin para Claude Code que te permite guardar prompts que usás frecuentemente y reutilizarlos en cualquier proyecto. Pensalo como un "bookmark" de prompts.
+2. **`prompt-lib export` command**: Export one or all prompts to a project directory (`.claude/prompts/`) to share with the team.
 
-### Paso 2: Instalación (1 minuto)
+3. **`prompt-lib import` command**: Import prompts from a `.md` file or directory, to migrate existing prompts.
+
+4. **Overwrite confirmation**: When saving a prompt with a name that already exists, warn that it will be overwritten and ask for confirmation.
+
+5. **Prompt versioning**: Save previous versions when editing (backup in `prompts/.history/<name>/<timestamp>.md`).
+
+### Medium priority
+
+6. **`prompt-lib stats` command**: Show statistics: total prompts, by category, most recent, most used.
+
+7. **Tags as first-class citizen**: `prompt-lib tags` command to list all tags in use and how many prompts each one has.
+
+8. **Configurable output format**: `prompt-lib list --json` for integration with other tools.
+
+9. **Template variables support**: Placeholders like `{{name}}`, `{{context}}` that Claude fills in when loading.
+
+10. **Favorites / pinned**: Mark prompts as favorites so they appear first in `list`.
+
+### Low priority
+
+11. **Cross-machine sync**: Sync the prompt library via git (a dedicated repo as storage).
+
+12. **Project-level shared prompts**: In addition to `~/.claude/plugins/data/`, support `.claude/prompts/` at project level.
+
+13. **Custom categories**: Allow categories beyond the predefined ones.
+
+14. **Name autocompletion**: `prompt-lib load <TAB>` autocompletes existing prompt names.
+
+---
+
+## Onboarding process
+
+Step-by-step guide for someone who has never used the plugin.
+
+### Step 1: Context (30 seconds)
+
+> **What is this?** A plugin for Claude Code that lets you save frequently used prompts and reuse them across any project. Think of it as a "bookmark" for prompts.
+
+### Step 2: Installation (1 minute)
 
 ```bash
-# Registrar el marketplace
+# Register the marketplace
 claude plugin marketplace add franciscomastromarino/claude-prompt-library
 
-# Instalar
+# Install
 claude plugin install claude-prompt-library@claude-prompt-library --scope user
 ```
 
-Verificar:
+Verify:
 ```bash
 claude plugin list
-# Buscar: claude-prompt-library — Status: ✔ enabled
+# Look for: claude-prompt-library — Status: ✔ enabled
 ```
 
-### Paso 3: Primer uso — guardar un prompt (2 minutos)
+### Step 3: First use — save a prompt (2 minutes)
 
-Abrir Claude Code y escribir:
+Open Claude Code and type:
 
 ```
 /prompt save code-review
 ```
 
-Claude te va a pedir:
-1. **Contenido del prompt** — pegá o escribí el prompt que querés guardar
-2. **Descripción** — una línea explicando para qué sirve
-3. **Categoría** — elegí entre: `api`, `system`, `chat`, `agent`, `task`, `general`
-4. **Tags** — palabras clave separadas por coma (opcional)
+Claude will ask you for:
+1. **Prompt content** — paste or type the prompt you want to save
+2. **Description** — one line explaining what it's for
+3. **Category** — choose from: `api`, `system`, `chat`, `agent`, `task`, `general`
+4. **Tags** — comma-separated keywords (optional)
 
-### Paso 4: Recuperar un prompt (30 segundos)
+### Step 4: Retrieve a prompt (30 seconds)
 
 ```
 /prompt load code-review
 ```
 
-Claude te muestra el prompt y te pregunta si querés usarlo tal cual o modificarlo.
+Claude shows the prompt and asks if you want to use it as-is or modify it.
 
-### Paso 5: Explorar la librería (30 segundos)
-
-```
-/prompt list           # ver todos
-/prompt search api     # buscar por palabra clave
-```
-
-### Paso 6: Flujo recomendado para el día a día
+### Step 5: Browse the library (30 seconds)
 
 ```
-Sesión nueva → necesitás un prompt que ya escribiste antes
-
-  /prompt search <lo que recuerdes>
-  /prompt load <nombre>
-  → Claude lo carga y podés usarlo directo
-
-Terminaste de escribir un buen prompt en la conversación
-
-  /prompt save <nombre-descriptivo>
-  → Queda guardado para la próxima
+/prompt list           # see all
+/prompt search api     # search by keyword
 ```
 
-### Cheat sheet para imprimir
+### Step 6: Quick access via autocomplete
+
+After saving prompts, they become available in the Claude Code autocomplete. Type `/prompt:` and your saved prompts appear in the selector — just pick one.
+
+To manually sync all prompts to autocomplete:
+```
+/prompt sync
+```
+
+### Step 7: Recommended daily workflow
 
 ```
-┌─────────────────────────────────────────────┐
-│         claude-prompt-library               │
-├─────────────────────────────────────────────┤
-│  /prompt list          Ver todos            │
-│  /prompt save <name>   Guardar nuevo        │
-│  /prompt load <name>   Cargar existente     │
-│  /prompt search <q>    Buscar               │
-│  /prompt edit <name>   Editar               │
-│  /prompt delete <name> Eliminar             │
-├─────────────────────────────────────────────┤
-│  Categorías: api | system | chat | agent    │
-│              task | general                 │
-└─────────────────────────────────────────────┘
+New session → need a prompt you wrote before
+
+  Option A: /prompt search <what you remember>
+            /prompt load <name>
+            → Claude loads it, ready to use
+
+  Option B: Type /prompt: and pick from autocomplete
+            → Instant, no typing needed
+
+Finished writing a good prompt in the conversation
+
+  /prompt save <descriptive-name>
+  → Saved for next time
+```
+
+### Cheat sheet
+
+```
+┌─────────────────────────────────────────────────┐
+│           claude-prompt-library                 │
+├─────────────────────────────────────────────────┤
+│  /prompt list          List all prompts         │
+│  /prompt save <name>   Save a new prompt        │
+│  /prompt load <name>   Load an existing prompt  │
+│  /prompt search <q>    Search prompts           │
+│  /prompt edit <name>   Edit a prompt            │
+│  /prompt delete <name> Delete a prompt          │
+│  /prompt sync          Sync to autocomplete     │
+├─────────────────────────────────────────────────┤
+│  /prompt:<name>        Quick load (autocomplete)│
+├─────────────────────────────────────────────────┤
+│  Categories: api | system | chat | agent        │
+│              task | general                     │
+└─────────────────────────────────────────────────┘
 ```

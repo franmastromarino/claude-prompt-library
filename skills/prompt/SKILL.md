@@ -21,6 +21,7 @@ Run the appropriate command based on what the user asked. If no action is clear,
 | `prompt-lib search <query>` | Search prompts by name, description, tags or content |
 | `prompt-lib delete <name>` | Delete a prompt and remove it from the index |
 | `prompt-lib edit <name>` | Print path to prompt file for editing |
+| `prompt-lib sync` | Sync all prompts to Claude Code autocomplete (`/prompt:<name>`) |
 
 ### Workflow
 

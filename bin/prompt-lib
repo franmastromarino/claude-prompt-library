@@ -8,6 +8,8 @@ set -euo pipefail
 DATA_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/prompt-library}"
 PROMPTS_DIR="$DATA_DIR/prompts"
 INDEX_FILE="$DATA_DIR/INDEX.json"
+COMMANDS_DIR="$HOME/.claude/commands"
+COMMAND_PREFIX="prompt:"
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -29,6 +31,46 @@ prompt_path() {
 die() {
   echo "error: $1" >&2
   exit 1
+}
+
+# Generate a Claude Code command file so the prompt appears in / autocomplete
+sync_command() {
+  local slug="$1"
+  mkdir -p "$COMMANDS_DIR"
+  local filepath
+  filepath="$(prompt_path "$slug")"
+  [ ! -f "$filepath" ] && return
+
+  # Extract description from frontmatter
+  local description=""
+  if head -1 "$filepath" | grep -q '^---'; then
+    description=$(sed -n '/^---$/,/^---$/p' "$filepath" | grep '^description:' | sed 's/^description: *//' || true)
+  fi
+  [ -z "$description" ] && description="Load prompt: $slug"
+
+  # Extract content after frontmatter
+  local body
+  if head -1 "$filepath" | grep -q '^---'; then
+    body=$(sed '1,/^---$/!d; 1,/^---$/{ /^---$/!d; }' "$filepath")
+    # Get everything after the second ---
+    body=$(awk 'BEGIN{n=0} /^---$/{n++; next} n>=2{print}' "$filepath")
+  else
+    body=$(cat "$filepath")
+  fi
+
+  cat > "$COMMANDS_DIR/${COMMAND_PREFIX}${slug}.md" <<CMDEOF
+---
+description: "$description"
+---
+
+$body
+CMDEOF
+}
+
+# Remove the command file for a prompt
+remove_command() {
+  local slug="$1"
+  rm -f "$COMMANDS_DIR/${COMMAND_PREFIX}${slug}.md"
 }
 
 # ── Commands ─────────────────────────────────────────────────────────
@@ -87,7 +129,11 @@ cmd_save() {
         created: $date
       }]' "$INDEX_FILE" > "$tmp" && mv "$tmp" "$INDEX_FILE"
 
+  # Sync to Claude Code commands for autocomplete
+  sync_command "$slug"
+
   echo "saved: $slug → $filepath"
+  echo "command: /${COMMAND_PREFIX}${slug} (available in autocomplete)"
 }
 
 cmd_list() {
@@ -175,6 +221,7 @@ cmd_delete() {
   [ ! -f "$filepath" ] && die "prompt '$slug' not found"
 
   rm "$filepath"
+  remove_command "$slug"
 
   local tmp
   tmp="$(mktemp)"
@@ -198,6 +245,24 @@ cmd_edit() {
   echo "$filepath"
 }
 
+cmd_sync() {
+  ensure_dirs
+  mkdir -p "$COMMANDS_DIR"
+
+  # Remove old prompt commands
+  find "$COMMANDS_DIR" -name "${COMMAND_PREFIX}*.md" -delete 2>/dev/null || true
+
+  # Regenerate from index
+  local count=0
+  for slug in $(jq -r '.[].slug' "$INDEX_FILE"); do
+    sync_command "$slug"
+    count=$((count + 1))
+  done
+
+  echo "synced $count prompts to $COMMANDS_DIR"
+  echo "prompts are available as /${COMMAND_PREFIX}<name> in Claude Code autocomplete"
+}
+
 cmd_help() {
   cat <<'HELP'
 prompt-lib — Personal prompt library manager
@@ -209,6 +274,7 @@ Usage:
   prompt-lib search <query>   Search by name, tag, category or content
   prompt-lib delete <name>    Delete a prompt
   prompt-lib edit <name>      Print path to prompt file for editing
+  prompt-lib sync             Sync all prompts to Claude Code autocomplete
   prompt-lib init             Initialize the prompt library
   prompt-lib help             Show this help
 
@@ -242,6 +308,7 @@ main() {
     search) cmd_search "$@" ;;
     delete) cmd_delete "$@" ;;
     edit)   cmd_edit "$@" ;;
+    sync)   cmd_sync ;;
     init)   cmd_init ;;
     help)   cmd_help ;;
     *)      die "unknown command: $action (run 'prompt-lib help')" ;;
