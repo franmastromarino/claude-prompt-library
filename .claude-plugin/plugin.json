@@ -2,5 +2,9 @@
   "name": "prompt-library",
   "version": "1.0.0",
   "description": "Personal prompt library — save, search, load and manage reusable prompts across projects",
-  "author": "Francisco"
+  "author": {
+    "name": "Francisco Mastromarino"
+  },
+  "repository": "https://github.com/franciscomastromarino/claude-prompt-library",
+  "license": "MIT"
 }
