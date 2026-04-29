@@ -11,11 +11,11 @@
 
 ```bash
 # Option A: from marketplace (production)
-claude plugin marketplace add franciscomastromarino/claude-prompt-library
+claude plugin marketplace add franmastromarino/claude-prompt-library
 claude plugin install claude-prompt-library@claude-prompt-library --scope user
 
 # Option B: local development (no install)
-git clone https://github.com/franciscomastromarino/claude-prompt-library.git
+git clone https://github.com/franmastromarino/claude-prompt-library.git
 claude --plugin-dir ./claude-prompt-library
 ```
 
@@ -279,7 +279,7 @@ Step-by-step guide for someone who has never used the plugin.
 
 ```bash
 # Register the marketplace
-claude plugin marketplace add franciscomastromarino/claude-prompt-library
+claude plugin marketplace add franmastromarino/claude-prompt-library
 
 # Install
 claude plugin install claude-prompt-library@claude-prompt-library --scope user

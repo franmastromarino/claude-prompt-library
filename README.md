@@ -4,13 +4,23 @@ A Claude Code plugin to save, search, load and manage reusable prompts across pr
 
 ## Installation
 
-```bash
-# Register the marketplace
-claude plugin marketplace add franciscomastromarino/claude-prompt-library
+### Via GitHub marketplace
 
-# Install the plugin
+```bash
+# 1. Register the marketplace
+claude plugin marketplace add franmastromarino/claude-prompt-library
+
+# 2. Install the plugin
 claude plugin install claude-prompt-library@claude-prompt-library --scope user
 ```
+
+### Via official Claude marketplace
+
+> Coming soon — submission pending approval.
+>
+> ```bash
+> claude plugin install claude-prompt-library --scope user
+> ```
 
 ## Usage
 
