@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# prompt-lib — Personal prompt library manager
+# Storage: ${CLAUDE_PLUGIN_DATA}/prompts/
+
+# Resolve data directory
+DATA_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/prompt-library}"
+PROMPTS_DIR="$DATA_DIR/prompts"
+INDEX_FILE="$DATA_DIR/INDEX.json"
+
+# ── Helpers ──────────────────────────────────────────────────────────
+
+ensure_dirs() {
+  mkdir -p "$PROMPTS_DIR"
+  if [ ! -f "$INDEX_FILE" ]; then
+    echo '[]' > "$INDEX_FILE"
+  fi
+}
+
+slugify() {
+  echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_-]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//'
+}
+
+prompt_path() {
+  echo "$PROMPTS_DIR/$1.md"
+}
+
+die() {
+  echo "error: $1" >&2
+  exit 1
+}
+
+# ── Commands ─────────────────────────────────────────────────────────
+
+cmd_init() {
+  ensure_dirs
+  echo "Prompt library initialized at $DATA_DIR"
+}
+
+cmd_save() {
+  local name="${1:-}"
+  [ -z "$name" ] && die "usage: prompt-lib save <name>"
+  ensure_dirs
+
+  local slug
+  slug="$(slugify "$name")"
+  local filepath
+  filepath="$(prompt_path "$slug")"
+
+  # Read content from stdin
+  local content
+  content="$(cat)"
+  [ -z "$content" ] && die "no content provided (pipe content via stdin or heredoc)"
+
+  # Write prompt file
+  echo "$content" > "$filepath"
+
+  # Extract metadata from frontmatter
+  local description="" category="general" tags="[]"
+  if echo "$content" | head -1 | grep -q '^---'; then
+    description=$(echo "$content" | sed -n '/^---$/,/^---$/p' | grep '^description:' | sed 's/^description: *//' || true)
+    category=$(echo "$content" | sed -n '/^---$/,/^---$/p' | grep '^category:' | sed 's/^category: *//' || true)
+    tags=$(echo "$content" | sed -n '/^---$/,/^---$/p' | grep '^tags:' | sed 's/^tags: *//' || true)
+  fi
+  [ -z "$category" ] && category="general"
+  [ -z "$tags" ] && tags="[]"
+
+  local created
+  created="$(date +%Y-%m-%d)"
+
+  # Update index — remove old entry if exists, add new one
+  local tmp
+  tmp="$(mktemp)"
+  jq --arg slug "$slug" \
+     --arg name "$name" \
+     --arg desc "$description" \
+     --arg cat "$category" \
+     --arg tags "$tags" \
+     --arg date "$created" \
+     '[ .[] | select(.slug != $slug) ] + [{
+        slug: $slug,
+        name: $name,
+        description: $desc,
+        category: $cat,
+        tags: $tags,
+        created: $date
+      }]' "$INDEX_FILE" > "$tmp" && mv "$tmp" "$INDEX_FILE"
+
+  echo "saved: $slug → $filepath"
+}
+
+cmd_list() {
+  ensure_dirs
+
+  local count
+  count="$(jq length "$INDEX_FILE")"
+  if [ "$count" -eq 0 ]; then
+    echo "No prompts saved yet. Use 'prompt-lib save <name>' to add one."
+    return
+  fi
+
+  echo "Prompt Library ($count prompts)"
+  echo "─────────────────────────────────────────────"
+  jq -r '.[] | "  \(.slug)\t\(.category)\t\(.tags)\t\(.description)"' "$INDEX_FILE" | \
+    column -t -s $'\t'
+  echo ""
+}
+
+cmd_load() {
+  local name="${1:-}"
+  [ -z "$name" ] && die "usage: prompt-lib load <name>"
+  ensure_dirs
+
+  local slug
+  slug="$(slugify "$name")"
+  local filepath
+  filepath="$(prompt_path "$slug")"
+
+  [ ! -f "$filepath" ] && die "prompt '$slug' not found"
+
+  cat "$filepath"
+}
+
+cmd_search() {
+  local query="${1:-}"
+  [ -z "$query" ] && die "usage: prompt-lib search <query>"
+  ensure_dirs
+
+  echo "Searching for: $query"
+  echo "─────────────────────────────────────────────"
+
+  # Search index metadata
+  local meta_matches
+  meta_matches="$(jq -r --arg q "$query" \
+    '.[] | select(
+      (.slug | ascii_downcase | contains($q | ascii_downcase)) or
+      (.description | ascii_downcase | contains($q | ascii_downcase)) or
+      (.tags | ascii_downcase | contains($q | ascii_downcase)) or
+      (.category | ascii_downcase | contains($q | ascii_downcase))
+    ) | "  \(.slug)\t\(.category)\t\(.description)"' "$INDEX_FILE")"
+
+  if [ -n "$meta_matches" ]; then
+    echo "Matches:"
+    echo "$meta_matches" | column -t -s $'\t'
+  fi
+
+  # Search file content
+  local content_matches
+  content_matches="$(grep -rl -i "$query" "$PROMPTS_DIR" 2>/dev/null | sed "s|$PROMPTS_DIR/||;s|\.md$||" || true)"
+
+  if [ -n "$content_matches" ]; then
+    echo ""
+    echo "Content matches:"
+    echo "$content_matches" | while read -r slug; do
+      echo "  $slug"
+    done
+  fi
+
+  if [ -z "$meta_matches" ] && [ -z "$content_matches" ]; then
+    echo "No results found."
+  fi
+}
+
+cmd_delete() {
+  local name="${1:-}"
+  [ -z "$name" ] && die "usage: prompt-lib delete <name>"
+  ensure_dirs
+
+  local slug
+  slug="$(slugify "$name")"
+  local filepath
+  filepath="$(prompt_path "$slug")"
+
+  [ ! -f "$filepath" ] && die "prompt '$slug' not found"
+
+  rm "$filepath"
+
+  local tmp
+  tmp="$(mktemp)"
+  jq --arg slug "$slug" '[ .[] | select(.slug != $slug) ]' "$INDEX_FILE" > "$tmp" && mv "$tmp" "$INDEX_FILE"
+
+  echo "deleted: $slug"
+}
+
+cmd_edit() {
+  local name="${1:-}"
+  [ -z "$name" ] && die "usage: prompt-lib edit <name>"
+  ensure_dirs
+
+  local slug
+  slug="$(slugify "$name")"
+  local filepath
+  filepath="$(prompt_path "$slug")"
+
+  [ ! -f "$filepath" ] && die "prompt '$slug' not found"
+
+  echo "$filepath"
+}
+
+cmd_help() {
+  cat <<'HELP'
+prompt-lib — Personal prompt library manager
+
+Usage:
+  prompt-lib save <name>      Save a prompt (reads from stdin)
+  prompt-lib list              List all saved prompts
+  prompt-lib load <name>      Print a saved prompt
+  prompt-lib search <query>   Search by name, tag, category or content
+  prompt-lib delete <name>    Delete a prompt
+  prompt-lib edit <name>      Print path to prompt file for editing
+  prompt-lib init             Initialize the prompt library
+  prompt-lib help             Show this help
+
+Examples:
+  prompt-lib save my-prompt <<'EOF'
+  ---
+  description: A useful system prompt
+  category: system
+  tags: [api, claude]
+  ---
+
+  You are a helpful assistant...
+  EOF
+
+  prompt-lib list
+  prompt-lib load my-prompt
+  prompt-lib search "claude"
+HELP
+}
+
+# ── Main ─────────────────────────────────────────────────────────────
+
+main() {
+  local action="${1:-help}"
+  shift || true
+
+  case "$action" in
+    save)   cmd_save "$@" ;;
+    list)   cmd_list ;;
+    load)   cmd_load "$@" ;;
+    search) cmd_search "$@" ;;
+    delete) cmd_delete "$@" ;;
+    edit)   cmd_edit "$@" ;;
+    init)   cmd_init ;;
+    help)   cmd_help ;;
+    *)      die "unknown command: $action (run 'prompt-lib help')" ;;
+  esac
+}
+
+main "$@"
