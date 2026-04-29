@@ -44,10 +44,12 @@ Run the appropriate command based on what the user asked. If no action is clear,
      <prompt content here>
      PROMPT_EOF
      ```
+   - After saving, tell the user: "Load it anytime with `/prompt:<name>`"
 
 3. **Loading a prompt** (`/prompt load <name>`):
    - Run `prompt-lib load <name>` and display the content.
    - Ask if the user wants to use it as-is or modify it.
+   - Tell the user they can load it directly next time with `/prompt:<name>` from the autocomplete.
 
 4. **Editing a prompt** (`/prompt edit <name>`):
    - Run `prompt-lib edit <name>` to get the file path.
