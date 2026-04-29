@@ -69,7 +69,9 @@ Searches across names, descriptions, tags and file content.
 
 The plugin provides:
 
-- **`bin/prompt-lib`** — A portable bash CLI that handles all CRUD operations deterministically
+- **`bin/prompt-lib`** — Bash CLI for macOS/Linux (requires `jq`)
+- **`bin/prompt-lib.ps1`** — PowerShell CLI for Windows (no external dependencies)
+- **`bin/prompt-lib.cmd`** — Windows wrapper that invokes the PowerShell script
 - **`skills/prompt/SKILL.md`** — A skill definition that gives Claude the `/prompt` interface
 
 Prompts are stored as markdown files with YAML frontmatter in `${CLAUDE_PLUGIN_DATA}/prompts/`, a persistent directory that survives plugin updates.
@@ -104,10 +106,18 @@ claude --plugin-dir ./
 ./bin/prompt-lib sync
 ```
 
-## Requirements
+## Platform support
+
+| Platform | CLI | Auto-refresh hook |
+|----------|-----|-------------------|
+| macOS / Linux | `prompt-lib` (bash + jq) | Yes |
+| Windows | `prompt-lib.cmd` (PowerShell 5.1+) | Manual sync needed |
+
+### Requirements
 
 - Claude Code CLI
-- `bash`, `jq` (available on macOS and most Linux distributions)
+- **macOS/Linux**: `bash`, `jq`
+- **Windows**: PowerShell 5.1+ (included in Windows 10+)
 
 ## License
 
