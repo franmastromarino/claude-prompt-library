@@ -1,20 +1,15 @@
 ---
 name: prompt
-description: >
-  Manage a personal prompt library. Save, list, load, search, and delete reusable prompts.
-  Use when the user wants to store a prompt for later, browse saved prompts, load one into
-  the conversation, or search their library by keyword or tag.
-argument-hint: "[save <name> | list | load <name> | search <query> | delete <name> | edit <name>]"
-arguments: [action, name]
-allowed-tools: "Read Bash(prompt-lib *) Edit"
-disable-model-invocation: true
+description: Manage a personal prompt library. Save, list, load, search, and delete reusable prompts. Use when the user wants to store a prompt for later, browse saved prompts, load one into the conversation, or search their library by keyword or tag. Use when user mentions "save prompt", "prompt library", "load prompt", "my prompts", or "reusable prompt".
 ---
 
 # Prompt Library Manager
 
 You have access to `prompt-lib`, a CLI tool that manages a persistent prompt library.
 
-## Handle the user's request: `prompt-lib $action $name`
+## Handle the user's request
+
+Run the appropriate command based on what the user asked. If no action is clear, run `prompt-lib list` and ask what they want to do.
 
 ### Available commands
 
