@@ -129,6 +129,10 @@ claude --plugin-dir ./
 - **macOS/Linux**: `bash`, `jq`
 - **Windows**: PowerShell 5.1+ (included in Windows 10+)
 
+## Privacy
+
+This plugin stores all data locally on your machine (`~/.claude/plugins/data/prompt-library/`). No data is collected, transmitted, or shared with third parties. All prompt content remains entirely under your control.
+
 ## License
 
 MIT
