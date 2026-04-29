@@ -245,6 +245,44 @@ cmd_edit() {
   echo "$filepath"
 }
 
+cmd_refresh() {
+  local name="${1:-}"
+  [ -z "$name" ] && die "usage: prompt-lib refresh <name>"
+  ensure_dirs
+
+  local slug
+  slug="$(slugify "$name")"
+  local filepath
+  filepath="$(prompt_path "$slug")"
+
+  [ ! -f "$filepath" ] && die "prompt '$slug' not found"
+
+  # Re-read metadata from the file
+  local description="" category="general" tags="[]"
+  if head -1 "$filepath" | grep -q '^---'; then
+    description=$(sed -n '/^---$/,/^---$/p' "$filepath" | grep '^description:' | sed 's/^description: *//' || true)
+    category=$(sed -n '/^---$/,/^---$/p' "$filepath" | grep '^category:' | sed 's/^category: *//' || true)
+    tags=$(sed -n '/^---$/,/^---$/p' "$filepath" | grep '^tags:' | sed 's/^tags: *//' || true)
+  fi
+  [ -z "$category" ] && category="general"
+  [ -z "$tags" ] && tags="[]"
+
+  # Update index entry
+  local tmp
+  tmp="$(mktemp)"
+  jq --arg slug "$slug" \
+     --arg desc "$description" \
+     --arg cat "$category" \
+     --arg tags "$tags" \
+     '[ .[] | if .slug == $slug then .description = $desc | .category = $cat | .tags = $tags else . end ]' \
+     "$INDEX_FILE" > "$tmp" && mv "$tmp" "$INDEX_FILE"
+
+  # Re-sync command file
+  sync_command "$slug"
+
+  echo "refreshed: $slug"
+}
+
 cmd_sync() {
   ensure_dirs
   mkdir -p "$COMMANDS_DIR"
@@ -274,6 +312,7 @@ Usage:
   prompt-lib search <query>   Search by name, tag, category or content
   prompt-lib delete <name>    Delete a prompt
   prompt-lib edit <name>      Print path to prompt file for editing
+  prompt-lib refresh <name>   Re-read metadata and sync after editing
   prompt-lib sync             Sync all prompts to Claude Code autocomplete
   prompt-lib init             Initialize the prompt library
   prompt-lib help             Show this help
@@ -308,6 +347,7 @@ main() {
     search) cmd_search "$@" ;;
     delete) cmd_delete "$@" ;;
     edit)   cmd_edit "$@" ;;
+    refresh) cmd_refresh "$@" ;;
     sync)   cmd_sync ;;
     init)   cmd_init ;;
     help)   cmd_help ;;

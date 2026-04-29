@@ -21,6 +21,7 @@ Run the appropriate command based on what the user asked. If no action is clear,
 | `prompt-lib search <query>` | Search prompts by name, description, tags or content |
 | `prompt-lib delete <name>` | Delete a prompt and remove it from the index |
 | `prompt-lib edit <name>` | Print path to prompt file for editing |
+| `prompt-lib refresh <name>` | Re-read metadata and update index + autocomplete after editing |
 | `prompt-lib sync` | Sync all prompts to Claude Code autocomplete (`/prompt:<name>`) |
 
 ### Workflow
@@ -55,6 +56,7 @@ Run the appropriate command based on what the user asked. If no action is clear,
    - Run `prompt-lib edit <name>` to get the file path.
    - Read the file with the Read tool.
    - Help the user make changes, then write back with Edit tool.
+   - **Important**: After editing, always run `prompt-lib refresh <name>` to update the index and autocomplete.
 
 5. **Searching** (`/prompt search <query>`):
    - Run the search and display results clearly.
